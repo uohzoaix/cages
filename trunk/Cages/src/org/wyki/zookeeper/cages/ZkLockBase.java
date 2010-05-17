@@ -148,7 +148,7 @@ public abstract class ZkLockBase extends ZkSyncPrimitive implements ISinglePathL
 			
 			if (rc == Code.OK.intValue())
 				thisNodeId = ZkLockNode.getLockNodeIdFromName(name);
-			if (progressOrRepeat(rc, new Code[] { Code.OK }, (Runnable)ctx))
+			if (passOrTryRepeat(rc, new Code[] { Code.OK }, (Runnable)ctx))
 				getQueuedLocks.run();
 		}
 		
@@ -168,7 +168,7 @@ public abstract class ZkLockBase extends ZkSyncPrimitive implements ISinglePathL
 		@Override
 		public void processResult(int rc, String path, Object ctx, List<String> children) {
 			// Upon successful enumeration of lock nodes, see if any are blocking this...
-			if (progressOrRepeat(rc, new Code[] { Code.OK }, (Runnable)ctx)) {
+			if (passOrTryRepeat(rc, new Code[] { Code.OK }, (Runnable)ctx)) {
 				// Create sorted list of nodes
 				SortedSet<ZkLockNode> nodeQueue = new TreeSet<ZkLockNode>();
 				for (String lockId : children)
@@ -228,7 +228,7 @@ public abstract class ZkLockBase extends ZkSyncPrimitive implements ISinglePathL
 			if (rc == Code.NONODE.intValue())
 				getQueuedLocks.run();
 			else
-				progressOrRepeat(rc, new Code[] { Code.OK }, (Runnable)ctx);
+				passOrTryRepeat(rc, new Code[] { Code.OK }, (Runnable)ctx);
 		}
 		
 	};
@@ -251,7 +251,7 @@ public abstract class ZkLockBase extends ZkSyncPrimitive implements ISinglePathL
 
 		@Override
 		public void processResult(int rc, String path, Object ctx) {
-			progressOrRepeat(rc, new Code[] { Code.OK, Code.NONODE }, (Runnable)ctx); 
+			passOrTryRepeat(rc, new Code[] { Code.OK, Code.NONODE }, (Runnable)ctx); 
 		}
 		
 	};

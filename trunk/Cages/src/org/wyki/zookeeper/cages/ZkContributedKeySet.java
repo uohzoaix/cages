@@ -171,7 +171,7 @@ public class ZkContributedKeySet extends ZkSyncPrimitive {
 			// In respect to the entry we tried to add, record whether we made the contribution, or another instance
 			recordCreationResult(name, Code.get(rc));
 			// Execute next step
-			if (progressOrRepeat(rc, new Code[] { Code.OK, Code.NODEEXISTS}, (Runnable)ctx))
+			if (passOrTryRepeat(rc, new Code[] { Code.OK, Code.NODEEXISTS}, (Runnable)ctx))
 					entryNodeCreator.run();
 		}
 		
@@ -189,7 +189,7 @@ public class ZkContributedKeySet extends ZkSyncPrimitive {
 
 		@Override
 		public void processResult(int rc, String path, Object ctx, List<String> children) {
-			if (progressOrRepeat(rc, new Code[] { Code.OK}, (Runnable)ctx)) {
+			if (passOrTryRepeat(rc, new Code[] { Code.OK}, (Runnable)ctx)) {
 				HashSet<String>modifiableSet = new HashSet<String>(children);
 				set = Collections.unmodifiableSet(modifiableSet);
 				onStateUpdated();
