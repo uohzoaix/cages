@@ -12,6 +12,7 @@ import org.apache.zookeeper.AsyncCallback.StatCallback;
 import org.apache.zookeeper.AsyncCallback.StringCallback;
 import org.apache.zookeeper.AsyncCallback.VoidCallback;
 import org.apache.zookeeper.KeeperException.Code;
+import org.apache.zookeeper.common.PathUtils;
 import org.apache.zookeeper.data.Stat;
 
 /**
@@ -36,6 +37,7 @@ public abstract class ZkLockBase extends ZkSyncPrimitive implements ISinglePathL
 	
 	public ZkLockBase(String lockPath) {
 		super(ZkSessionManager.instance());
+		PathUtils.validatePath(lockPath);
 		lockState = LockState.Idle;
 		this.lockPath = lockPath;
 		mutex = new Integer(-1);
