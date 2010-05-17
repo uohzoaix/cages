@@ -1,59 +1,75 @@
 package org.wyki.zookeeper.cages;
 
-import java.util.Iterator;
-
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.AsyncCallback.StringCallback;
 import org.apache.zookeeper.KeeperException.Code;
+import org.apache.zookeeper.common.PathUtils;
 
-import com.google.common.base.Splitter;
-
+/**
+ * Create a path on ZooKeeper. First an attempt is made to create the target path directly. If this fails
+ * because its immediate ancestor node does not exist, an attempt is made to create the ancestor. This continues
+ * until an ancestor node is successfully created. Thereafter, successive descendants are created until the
+ * target path is created. This algorithm improves performance in most cases by minimizing round-trips to
+ * check the for the existence of ancestors of the target path when the target or a close ancestor already exists. 
+ * 
+ * @author dominicwilliams
+ *
+ */
 public class ZkPath extends ZkSyncPrimitive {
 
-	final String path;
-	final Iterable<String> pathNodes;
-	final CreateMode createMode;
-	Iterator<String> node;
-	String createPath;
+	private final String targetPath;
+	private final String[] pathNodes;
+	private int pathNodesIdx;
+	private final CreateMode createMode;
 	
 	public ZkPath(String path, CreateMode createMode) {
 		super(ZkSessionManager.instance());
-		this.path = path;
-		this.pathNodes = Splitter.on("/").omitEmptyStrings().split(path);
+		targetPath = path;
 		this.createMode = createMode;
-		pathCreator.run();
+		PathUtils.validatePath(targetPath);
+		pathNodes = targetPath.split("/");
+		pathNodesIdx = pathNodes.length;
+		tryCreatePath.run();
 	}
 	
 	public String getPath() {
-		return path;
+		return targetPath;
 	}
 	
-	private Runnable pathCreator = new Runnable() {
+	private Runnable tryCreatePath = new Runnable() {
 
 		@Override
 		public void run() {
-			if (node == null) {
-				node = pathNodes.iterator();
-				createPath = "";
+			StringBuilder currNodePath = new StringBuilder();
+			for (int i=1; i<pathNodesIdx; i++) { // i=1 to skip split()'s empty node
+				currNodePath.append("/");
+				currNodePath.append(pathNodes[i]);
 			}
-			if (!node.hasNext()) {
-				onStateUpdated();
-			} else {
-				createPath = createPath + "/" + node.next();
-				zooKeeper().create(createPath, new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE,
-						createMode, pathCreatorResultHandler, this);
-			}
+				
+			zooKeeper().create(currNodePath.toString(), new byte[0], ZooDefs.Ids.OPEN_ACL_UNSAFE,
+					createMode, createPathHandler, this);
 		}
 		
 	};
 	
-	private StringCallback pathCreatorResultHandler = new StringCallback() {
+	private StringCallback createPathHandler = new StringCallback() {
 
 		@Override
 		public void processResult(int rc, String path, Object ctx, String name) {
-			if (progressOrRepeat(rc, new Code[] { Code.OK, Code.NODEEXISTS}, (Runnable)ctx)) {
-				pathCreator.run();
+			if (passOrTryRepeat(rc, new Code[] { Code.OK, Code.NODEEXISTS, Code.NONODE}, (Runnable)ctx)) { 
+				Code code = Code.get(rc);
+				if (code == Code.OK || code == Code.NODEEXISTS) {
+					if (pathNodesIdx >= pathNodes.length) {
+						onStateUpdated();
+						return;
+					}
+					pathNodesIdx++;
+				} else {
+					assert code == Code.NONODE;
+					pathNodesIdx--;
+				}
+				tryCreatePath.run();
 			}
 		}
 		

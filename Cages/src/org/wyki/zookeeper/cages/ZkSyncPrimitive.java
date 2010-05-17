@@ -299,7 +299,7 @@ public abstract class ZkSyncPrimitive implements Watcher {
      * @param operation					The operation from the previous step (provided so it might be retried
      * @return 							Whether the next step should be started
      */
-    protected boolean progressOrRepeat(int rc, Code[] acceptable, Runnable operation) {
+    protected boolean passOrTryRepeat(int rc, Code[] acceptable, Runnable operation) {
 		
 		Code opResult = Code.get(rc);
 		
