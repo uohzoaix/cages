@@ -9,15 +9,20 @@ import java.util.concurrent.TimeUnit;
  *
  */
 public class AutoResetEvent implements IResetEvent {
-	private Semaphore event;
+	private final Semaphore event;
+	private final Integer mutex;
 	
 	public AutoResetEvent(boolean signalled) {
 		event = new Semaphore(signalled ? 1 : 0);
+		mutex = new Integer(-1);
+		
 	}
 	
 	public void set() {
-		if (event.hasQueuedThreads() || event.availablePermits() == 0)
-			event.release();			
+		synchronized (mutex) {
+			if (event.availablePermits() == 0)
+				event.release();	
+		}
 	}
 	
 	public void reset() {

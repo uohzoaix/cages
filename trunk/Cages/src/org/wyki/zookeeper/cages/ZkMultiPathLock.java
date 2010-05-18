@@ -1,7 +1,7 @@
 package org.wyki.zookeeper.cages;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Vector;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
@@ -40,7 +40,7 @@ public class ZkMultiPathLock implements IMultiPathLock, ITryLockListener {
 	
 	private ILockListener listener;
 	private boolean tryAcquireOnly;
-	private volatile Vector<ISinglePathLock> locks;
+	private volatile ArrayList<ISinglePathLock> locks;
 	private final ManualResetEvent isDone;
 	private ZkCagesException killerException;
 	private volatile LockState lockState;
@@ -51,7 +51,7 @@ public class ZkMultiPathLock implements IMultiPathLock, ITryLockListener {
 	
 	public ZkMultiPathLock() {
 		lockState = LockState.Idle;
-		locks = new Vector<ISinglePathLock>(32);
+		locks = new ArrayList<ISinglePathLock>(32);
 		isDone = new ManualResetEvent(false);
 		retry = ZkSessionManager.instance().callbackExecutor;
 		mutex = new Integer(-1);
@@ -163,7 +163,7 @@ public class ZkMultiPathLock implements IMultiPathLock, ITryLockListener {
 	}
 	
 	private String[] getLockPathsByType(ILock.LockType type) {
-		Vector<String> lockPaths = new Vector<String>(32);
+		ArrayList<String> lockPaths = new ArrayList<String>(32);
 		List<ISinglePathLock> lockList = locks;
 		for (ISinglePathLock lock : lockList)
 			if (lock.getType() == type)
@@ -240,7 +240,7 @@ public class ZkMultiPathLock implements IMultiPathLock, ITryLockListener {
 		// Release all existing locks / attempts to lock
 		releaseAll();
 		// Create new array of lock objects
-		Vector<ISinglePathLock> newLockObjs = new Vector<ISinglePathLock>(locks.size());
+		ArrayList<ISinglePathLock> newLockObjs = new ArrayList<ISinglePathLock>(locks.size());
 		for (ISinglePathLock lock : locks) {
 			if (lock.getType() == LockType.Read)
 				newLockObjs.add(new ZkReadLock(lock.getLockPath()));
