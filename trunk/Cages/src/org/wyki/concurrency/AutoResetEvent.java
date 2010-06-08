@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * 
- * @author dominicwilliams
+ * @author dominicwilliams 
  *
  */
 public class AutoResetEvent implements IResetEvent {
